@@ -1,0 +1,8 @@
+Beams:idA = 2212 ! first incoming beam is a 2212, i.e. a proton.
+Beams:idB = 2212 ! second beam is also a proton.
+Beams:frameType = 2 ! back-to-back frame
+Beams:eA = 120. ! 120 GeV beam
+Beams:eB = 0. ! Fixed target
+HardQCD:all = on ! Turn on processes
+431:mayDecay = true
+16:mayDecay = true
