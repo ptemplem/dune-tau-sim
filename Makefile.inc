@@ -1,5 +1,5 @@
 # Install directory prefixes.
-PYTHIA=/home/ptemplem/dunetau/pythia/pythia8310
+PYTHIA=/cvmfs/larsoft.opensciencegrid.org/products/pythia8/v8_3_10/Linux64bit+3.10-2.17-e26-p3915-prof
 PREFIX_BIN=$(PYTHIA)/bin
 PREFIX_INCLUDE=$(PYTHIA)/include
 PREFIX_LIB=$(PYTHIA)/lib
@@ -13,12 +13,12 @@ CXX_SONAME=-Wl,-soname,
 LIB_SUFFIX=.so
 OBJ_COMMON=
 
-ROOT=/home/ptemplem/.conda/envs/pyroot
+ROOT=${ROOTSYS}
 ROOT_CONFIG=root-config
 ROOT_BIN=$(ROOT)/bin
 ROOT_INCLUDE=-I$(ROOT)/include
 ROOT_LIB=-L$(ROOT)/lib -Wl,-rpath,$(ROOT)/lib -lCore
 
-DK2NU=/home/ptemplem/dk2nu
-DK2NU_INCLUDE=-I$(DK2NU)
+DK2NU=$(PWD)/../dk2nu
+DK2NU_INCLUDE=-I$(DK2NU) -I$(DK2NU)
 DK2NU_LIB=-L$(DK2NU)/lib -ldk2nuTree -Wl,-rpath,$(DK2NU)/lib

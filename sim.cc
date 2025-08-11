@@ -14,13 +14,20 @@
 
 using namespace Pythia8;
 int main(int argc, char* argv[]) {
+    int tmp_n = 0;
+    double tmp_dtot = 0;
+    double tmp_ttot = 0;
     Pythia pythia;
     // Pythia Init
     pythia.readFile(argv[1]);
+    pythia.readString("Random:setSeed = on");
+    std::string seed = std::string("Random:seed = ") + std::string(argv[3]);
+    pythia.readString(seed.c_str());
     pythia.init();
 
     // Init TTree
-    TFile f("nu_tree.root", "RECREATE");
+    std::string file = std::string(argv[2])+std::string("/nu_tree")+std::string(argv[3])+std::string(".root");
+    TFile f(file.c_str(), "RECREATE");
     bsim::Dk2Nu dk2nu;
     bsim::DkMeta dkmeta;
     bsim::Decay decay;
@@ -40,21 +47,20 @@ int main(int argc, char* argv[]) {
         std::cout << "[ " << std::setw(2) << iloc << "] "
                 << dkmeta.location[iloc] << std::endl;
     }
-    dkmetaTree.Fill();
     
-    int nEvent = 1000000;
-    int job = 1;
+    int nEvent = 1e5; // 1e8 Runs about 12hr per job
+    int job = std::stoi(std::string(argv[3]));
     // Event Loop
     for (int iEvent = 0; iEvent < nEvent; ++iEvent){
         if (!pythia.next()) continue;
         // Particle Loop
         for (int i = 0; i < pythia.event.size(); ++i) {
-            if (pythia.event[i].id() == 16 && pythia.event[pythia.event[i].mother1()].id() == 431) {
+	    int id = pythia.event[i].id();
+            if (id == 16 || id == -16 || id == 14 || id == -14 || id == 12 || id == -12) {
                 //Setup
                 dk2nu.job = job;
                 dk2nu.potnum = iEvent;
-                decay.ndecay= 16; 
-                decay.ntype = 16;
+                decay.ntype = id;
 
                 //Neutrino Vertex
                 decay.vx = pythia.event[i].xProd();
@@ -70,11 +76,7 @@ int main(int argc, char* argv[]) {
                 //Parent Data
                 int iP = pythia.event[i].mother1();
                 decay.ptype = pythia.event[iP].id();
-                if (decay.ptype != 431) {
-                    std::cout << "Neutrino NOT from Ds Decay! Actually from " << decay.ptype;
-                }
-                std::cout << pythia.event[pythia.event[iP].daughter1()].id() << "  " << pythia.event[pythia.event[iP].daughter2()].id() <<"\n";
-                decay.pdpx = pythia.event[iP].px(); //Prod vertexes are essentially the same
+                decay.pdpx = pythia.event[iP].px(); 
                 decay.pdpy = pythia.event[iP].py();
                 decay.pdpz = pythia.event[iP].pz();
 
@@ -83,13 +85,20 @@ int main(int argc, char* argv[]) {
                 decay.pppz = pythia.event[iP].pz();
                 decay.ppenergy = pythia.event[iP].e();
 
-                //Calculating Neutrino's CM Energy
-                double m_ds = pythia.event[iP].m();
-                int iTau = pythia.event[iP].daughter1();
-                double m_tau = pythia.event[iTau].m();
-                decay.necm = (m_ds*m_ds-m_tau*m_tau)/(2*m_ds);
-                
-                //Grandparent Data
+		string products = "";
+		vector<int> daughters = pythia.event[iP].daughterList();
+		for (const int& iD : daughters) {
+		    products = products + pythia.event[iD].name();
+		    products = products + " ";
+		} 
+                //std::cout << pythia.event[iP].name() << " -> " << products <<"\n";
+
+		//Calculating Neutrino's CM Energy
+                double m_par = pythia.event[iP].m();
+                double e_prod = pythia.event[iP].e()*pythia.event[i].e();
+		double p_prod = pythia.event[iP].px()*pythia.event[i].px()+pythia.event[iP].py()*pythia.event[i].py()+pythia.event[iP].pz()*pythia.event[i].pz();
+		decay.necm = (e_prod-p_prod)/m_par; 
+		//Grandparent Data
                 int iM = pythia.event[iP].mother1();
                 decay.muparpx = pythia.event[iM].px();
                 decay.muparpy = pythia.event[iM].py();
@@ -98,12 +107,14 @@ int main(int argc, char* argv[]) {
 
                 //Weight Calc and Fill
                 dk2nu.decay = decay;
-                bsim::calcLocationWeights(&dkmeta,&dk2nu);
+                //bsim::calcLocationWeights(&dkmeta,&dk2nu);  Can't do this more than once, moved to plot.cc for testing                
                 dk2nuTree.Fill();
                 dk2nu.clear();
-            }
-            if (pythia.event[i].id() == -16) {
-                // iNuTBar += 1;
+
+		//DkMeta Fill
+		dkmeta.job = job;
+		dkmeta.pots = nEvent;
+		dkmetaTree.Fill(); 
             }
         }
     }

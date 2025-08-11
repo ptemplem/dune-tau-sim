@@ -30,17 +30,15 @@ $(PYTHIA):
 
 # Compile and run plotting
 plot:
-	$(CXX) plot.cc -o plot -w $(DK2NU_INCLUDE) $(DK2NU_LIB) $(ROOT_LIB) \
+	$(CXX) plot.cc -o plot -w -I$(G4LBNEWORKDIR)/ProductionScripts $(DK2NU_INCLUDE) $(DK2NU_LIB) $(ROOT_LIB) \
 	$(shell $(ROOT_CONFIG) --cflags --glibs)
-	./plot
 
 # Compile and run simulation
 sim:
 	$(CXX) $@.cc -o $@ -w $(DK2NU_INCLUDE) $(DK2NU_LIB) $(ROOT_LIB) $(CXX_COMMON) \
 	$(shell $(ROOT_CONFIG) --cflags --glibs)
-	./$@ $@.cmnd > $@.log
 
-# Clean.
+# Clean
 clean:
 	rm ./plot
 	rm ./sim
